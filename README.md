@@ -8,5 +8,3 @@ Here are some common elements that may be included in a README file for a Python
 - Configuration options, if applicable.
 - Contribution guidelines and instructions for how to report issues or bugs.
 - License information, specifying the terms under which the library is distributed.
-
-Overall, a README file is an important part of any Python library, as it provides users with the information they need to get started with the library and use it effectively. It can also serve as a useful reference for developers who are contributing to the library or extending its functionality.

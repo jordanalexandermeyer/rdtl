@@ -1,4 +1,4 @@
-The `pyproject.toml` file is a configuration file used in Python libraries that adopt the newer `PEP 517`/`PEP 518` standard for building and packaging. The file specifies the build system requirements and project metadata needed for building and packaging the Python library.
+The `pyproject.toml` file specifies the build system requirements and project metadata needed for building and packaging the Python library.
 
 Here are some common elements that may be included in a `pyproject.toml` file for a Python library:
 
@@ -6,6 +6,4 @@ Here are some common elements that may be included in a `pyproject.toml` file fo
 - The metadata for the library, such as the name, version, author, and description of the library.
 - The configuration for the build process, including options such as where to output the built files, which files to include or exclude, and other build-related settings.
 
-The `pyproject.toml` file is used by the `build` and `install` commands in `pip` to build and install the package. The `PEP 517` standard allows for building and packaging of Python libraries using a variety of build backends, such as `setuptools`, `flit`, and `poetry`, among others.
-
-Overall, the `pyproject.toml` file is an important part of building and packaging Python libraries, as it specifies the build system requirements and project metadata needed for building and packaging the library using the `PEP 517` standard.
+The `pyproject.toml` file is used by the `build` and `install` commands in `pip` to build and install the package.

@@ -10,5 +10,3 @@
 # - Performing any necessary initialization for the package, such as importing other modules or packages, or setting up configuration or state.
 # - Specifying any version or metadata information for the package.
 # - Defining any global variables or constants that are required by the package.
-
-# Overall, the `__init__.py` file is an important part of any Python library, as it defines the package and its public API, and performs any necessary initialization for the package.

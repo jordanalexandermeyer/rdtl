@@ -1,7 +1,5 @@
 # A `setup.py` file is a script that is used to install and distribute a Python library. The `setup.py` script defines the metadata and dependencies for the library, and provides instructions for how to install and distribute the library.
 
-# The `setup.py` script is a Python script that is located in the root directory of the library. It typically contains several functions that define the library's metadata and dependencies, and specify how to install and distribute the library.
-
 # Here are some examples of functions that can be defined in a `setup.py` file:
 
 # - `setup()`: This function is required and defines the metadata for the library, such as its name, version number, author, and license.
@@ -26,5 +24,3 @@
 # ```
 
 # This command will create a source distribution package that can be uploaded to the Python Package Index (PyPI) or distributed to other developers.
-
-# Overall, the `setup.py` file is a critical part of any Python library, as it provides the metadata and instructions needed to install and distribute the library.

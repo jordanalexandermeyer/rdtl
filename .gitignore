@@ -12,3 +12,6 @@ venv/
 # Editor-specific files
 .vscode/
 .idea/
+
+# Pycache
+__pycache__/*
