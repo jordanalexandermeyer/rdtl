@@ -1,0 +1,14 @@
+# Compiled Python files
+*.pyc
+
+# Build directories
+build/
+dist/
+
+# Virtual environment
+venv/
+.env/
+
+# Editor-specific files
+.vscode/
+.idea/
