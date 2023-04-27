@@ -2,20 +2,22 @@ from pandas import DataFrame, Timestamp
 from typing import Union
 import matplotlib.pyplot as plt
 
-def display_asset_count_in_each_zone(pixel_dataframe: DataFrame, current_time_est: Timestamp, site: str=None, map_filename: str=None, zone_coordinates_dataframe: DataFrame=None):
+def display_asset_count_in_each_zone(pixel_dataframe: DataFrame, time_est: Timestamp, site: str=None, map_filename: str=None, zone_coordinates_dataframe: DataFrame=None):
     """
-    This function takes in a dataframe containing the pixel data (asset_id, zone, time_est) and a time and returns a bar chart that displays the number of assets in each zone.
+    This function prints a bar chart that displays the number of assets in each zone at the given time.
+    If a site is provided, the function will only display the assets for that site.
     If a map_filename, zone_coordinates_dataframe, and site are provided, the function will also plot the zones on the map.
 
     Args:
-        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, time_est)
-        current_time_est: the estimated time of the event in eastern time
+        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, site, and time_est are required)
+        time_est: the time of the event in eastern time
         site (optional): the site to display
-        map_filename (optional): the filename of the map
-        zone_coordinates_dataframe (optional): a dataframe containing the zone coordinates normalized from 0 to 100 (zone, x_coordinate, y_coordinate) ordered in the way that the zones should be plotted
+        map_filename (optional): the filename of the site map
+        zone_coordinates_dataframe (optional): a dataframe containing the zone coordinates normalized from 0 to 100 (zone, x_coordinate, y_coordinate) ordered in the way that the zone boundary should be plotted
+            - ex: for a single rectangular zone, this should contain 4 rows, one for each corner of the rectangle in clockwise or counterclockwise order
 
     Returns:
-        None
+        None (potentially could return a useful dataframe here)
     """
     # throw error if there is a map_filename but no zone_coordinates_dataframe and vice versa
     if map_filename is not None and zone_coordinates_dataframe is None:
@@ -25,11 +27,13 @@ def display_asset_count_in_each_zone(pixel_dataframe: DataFrame, current_time_es
     if zone_coordinates_dataframe is not None and map_filename is not None and site is None:
         raise ValueError('zone_coordinates_dataframe and map_filename provided but no site')
     
-    # check if pixel_dataframe has the correct columns (asset_id, zone, time_est) and throw error if not
+    # check if pixel_dataframe has the correct columns (asset_id, zone, site, time_est) and throw error if not
     if 'asset_id' not in pixel_dataframe.columns:
         raise ValueError('pixel_dataframe does not contain the column "asset_id"')
     if 'zone' not in pixel_dataframe.columns:
         raise ValueError('pixel_dataframe does not contain the column "zone"')
+    if 'site' not in pixel_dataframe.columns:
+        raise ValueError('pixel_dataframe does not contain the column "site"')
     if 'time_est' not in pixel_dataframe.columns:
         raise ValueError('pixel_dataframe does not contain the column "time_est"')
     
@@ -40,7 +44,7 @@ def display_asset_count_in_each_zone(pixel_dataframe: DataFrame, current_time_es
 
     # assume that an asset is in the zone it was last seen in before the given time_est
     # filter the pixel_dataframe to only include the rows where the time_est is less than the time_est in the dataframe
-    pixel_dataframe = pixel_dataframe[pixel_dataframe['time_est'] < current_time_est]
+    pixel_dataframe = pixel_dataframe[pixel_dataframe['time_est'] < time_est]
 
     # sort the dataframe by time_est and drop all duplicate asset_id rows, keeping only the last row for each asset_id
     # this will give us the last zone that each asset was in before the given time_est
@@ -55,10 +59,12 @@ def display_asset_count_in_each_zone(pixel_dataframe: DataFrame, current_time_es
 
     # group the dataframe by zone and count the number of assets in each zone
     zone_counts = pixel_dataframe.groupby('zone').count()['asset_id']
+
+    # reset the index and convert from series to dataframe
     zone_counts = zone_counts.reset_index(name='asset_count')
 
     # plot the zone_counts as a bar chart
-    formatted_time = current_time_est.strftime('%Y-%m-%d %X')
+    formatted_time = time_est.strftime('%Y-%m-%d %X')
     zone_counts.plot(kind='bar', title=f'Number of Assets in Each Zone at {formatted_time} EST', xlabel='Zone', ylabel='Number of Assets', x='zone', y='asset_count', legend=False)
 
     # if map_filename, zone_coordinates_dataframe, and site are provided, plot the zones on the map
@@ -109,75 +115,64 @@ def display_asset_count_in_each_zone(pixel_dataframe: DataFrame, current_time_es
                 asset_count = zone_counts[zone_counts['zone'] == zone]['asset_count'].values[0]
                 ax.text(x_coordinates.iloc[0], y_coordinates.iloc[0], s=asset_count, fontsize='xx-large', color='#000000', horizontalalignment='left', verticalalignment='bottom')
 
+        # show the map
         plt.show()
-        
 
-CHART_TYPES = {'line', 'scatter', 'bar'}
-
-def display_temperature_changes_over_time(pixel_dataframe: DataFrame, asset_id: str, chart_type: str=None, zone_subplots: Union[list, bool, str]=False):
+def display_temperature_changes_over_time(pixel_dataframe: DataFrame, asset_id: str, zone_subplots: Union[list, bool, str]=False, site: str=None, chart_type: str=None):
     """
-    This function takes in a dataframe containing the pixel data (asset_id, zone, time_est, temperature_c, temperature_f) and plots the temperature changes over time for a given asset_id.
-    If a zone_subplot is provided, the function will also create sub-plots showing the temperature changes over time for the given asset_id in each listed zone.
-        - The zone_subplots can be a list of zone names, a boolean value, or an individual zone name as a string.
-        - If 'True' is supplied, the function will create subplots for all zones.
+    This function prints a chart showing how the temperature changes over time for a given asset_id.
+    If 'zone_subplots' is provided, the function will also create sub-plots showing the temperature changes over time for the given asset_id in each listed zone.
+        - The 'zone_subplots' can be a list of zone names (str), a boolean value, or an individual zone name as a string.
+            - If 'True' is supplied, the function will create subplots for all zones.
+            - If 'False' is supplied, the function will not create any subplots.
+            - If an individual zone name is supplied, the function will create a subplot for that zone.
+            - If a list of zone names is supplied, the function will create subplots for each zone in the list.
+    If a site is provided, the function will only display the temperature changes for that site.
+    If 'chart_type' is provided, the function will plot the temperature changes over time using the given chart type.
 
     Args:
-        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, time_est, temperature_c, temperature_f)
-        asset_id: the asset_id to plot
-        chart_type (optional): the type of chart to plot (line, scatter, bar)
+        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, site, time_est, temperature_c, and/or temperature_f required)
+        asset_id: the asset_id whose temperature will be plotted
         subplots (optional): a list of zone names, a boolean value, or an individual zone name as a string
-
-    Returns:
-        None
-    """
-    # function body here
-    pass
-
-def display_time_in_zones(pixel_dataframe: DataFrame, asset_id: str, site: str=None):
-    """
-    This function takes in a dataframe containing the pixel data (asset_id, zone, site, time_est) and and asset ID and prints a spreadsheet showing how long the asset was in each zone.
-    If a site is provided, the function will only display the zones for that site.
-
-    Args:
-        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, site, time_est)
-        asset_id: the asset_id to plot
         site (optional): the site to display
+        chart_type (optional): the type of chart to plot (line, scatter, bar)
 
     Returns:
-        None
+        None (potentially could return a useful dataframe here)
     """
     # function body here
     pass
 
-def display_time_outliers_in_zones(pixel_dataframe: DataFrame, outlier_dataframe: DataFrame, asset_id: str=None, site: str=None):
+def get_time_in_zones(pixel_dataframe: DataFrame, asset_id: str=None, site: str=None, outlier_dataframe: DataFrame=None):
     """
-    This function takes in a dataframe containing the pixel data (asset_id, zone, site, time_est) and an outlier dataframe (zone, expected_time, acceptable_time_difference) and prints a spreadsheet displaying all the outliers.
-    If an asset_id is provided, the function will only display the outliers for that asset.
-    If a site is provided, the function will only display the outliers for that site.
+    This function returns a dataframe showing how long all asset_id's were in each zone.
+    If an asset_id is provided, the function will only display data for that asset_id.
+    If a site is provided, the function will only display data for the zones in that site.
+    If an outlier_dataframe is provided, the returned dataframe will include an additional boolean column 'is_outlier' with True for any zones where the asset_id spent more time than expected.
 
     Args:
-        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, site, time_est)
-        outlier_dataframe: a dataframe containing the outlier data (zone, expected_time, acceptable_time_difference)
-        asset_id (optional): the asset_id to plot
+        pixel_dataframe: a dataframe containing the pixel data (asset_id, zone, site, and time_est required)
+        asset_id (optional): the asset_id to display
         site (optional): the site to display
+        outlier_dataframe (optional): a dataframe containing the outlier data (zone, expected_time, and acceptable_time_difference required)
 
     Returns:
-        None
+        DataFrame: a dataframe showing how long all asset_id's were in each zone
+            - The dataframe will contain the following columns: asset_id, site, zone, time_in_zone_seconds, time_in_zone_minutes, time_in_zone_hours, and optionally is_outlier
     """
     # function body here
     pass
 
-def display_asset_journey(pixel_dataframe: DataFrame, asset_id: str, site: Union[list, str]=None):
+def display_asset_journey(pixel_dataframe: DataFrame, asset_id: str):
     """
-    This function takes in a dataframe containing the pixel data (asset_id, latitude, longitude, time_est, site) and plots the journey of the asset over time.
-    If a site is provided, the function will only display location data for that site.
-        - The sites can be a list of site names or an individual site name as a string.
-        - If left empty, the function will display the journey for all sites.
+    This function prints a map with the journey of the asset over time plotted using geo-coordinates.
 
     Args:
-        pixel_dataframe: a dataframe containing the pixel data (asset_id, latitude, longitude, time_est, site)
-        asset_id: the asset_id to plot
-        site (optional): a list of site names or an individual site name as a string
+        pixel_dataframe: a dataframe containing the pixel data (asset_id, latitude, longitude, time_est, and site required)
+        asset_id: the asset_id whose journey will be plotted
+
+    Returns:
+        None (potentially could return a useful dataframe here)
     """
     # function body here
     pass
